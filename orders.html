@@ -1,0 +1,205 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Orders | FreshRoute</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background: #f4f8f4;
+            font-family: Arial, sans-serif;
+        }
+
+        .navbar {
+            background: #198754;
+        }
+
+        .navbar-brand {
+            color: white;
+            font-weight: bold;
+        }
+
+        .order-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 15px #0001;
+            margin-bottom: 20px;
+        }
+
+        .page-title {
+            color: #198754;
+            font-weight: bold;
+        }
+
+        .price {
+            color: #198754;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 7px 14px;
+            border-radius: 20px;
+            background: #fff3cd;
+            color: #856404;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .confirmed {
+            background: #cfe2ff;
+            color: #084298;
+        }
+
+        .completed {
+            background: #d1e7dd;
+            color: #0f5132;
+        }
+
+        .cancelled {
+            background: #f8d7da;
+            color: #842029;
+        }
+    </style>
+</head>
+
+<body>
+
+<nav class="navbar navbar-expand-lg">
+    <div class="container">
+        <a class="navbar-brand" href="{{ url_for('home') }}">
+            FreshRoute
+        </a>
+
+        <div class="ms-auto">
+            {% if session.get('role') == 'farmer' %}
+                <a href="{{ url_for('farmer') }}" class="btn btn-light btn-sm me-2">
+                    Dashboard
+                </a>
+            {% elif session.get('role') == 'buyer' %}
+                <a href="{{ url_for('marketplace') }}" class="btn btn-light btn-sm me-2">
+                    Marketplace
+                </a>
+            {% endif %}
+
+            <a href="{{ url_for('logout') }}" class="btn btn-outline-light btn-sm">
+                Logout
+            </a>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-5">
+
+    <div class="text-center mb-5">
+        <h1 class="page-title">My Orders</h1>
+        <p class="text-muted">
+            Track and manage your FreshRoute orders.
+        </p>
+    </div>
+
+    {% with messages = get_flashed_messages() %}
+        {% for message in messages %}
+            <div class="alert alert-info">{{ message }}</div>
+        {% endfor %}
+    {% endwith %}
+
+    {% for order in orders %}
+
+    <div class="order-card">
+
+        <div class="row">
+
+            <div class="col-md-8">
+
+                <h4 class="text-success">
+                    {{ order.product_name }}
+                </h4>
+
+                {% if session.get('role') == 'farmer' %}
+                    <p><strong>Buyer:</strong> {{ order.buyer_name }}</p>
+                {% elif session.get('role') == 'buyer' %}
+                    <p><strong>Farmer:</strong> {{ order.farmer_name }}</p>
+                {% endif %}
+
+                <p><strong>Order ID:</strong> #{{ order.id }}</p>
+
+                <p><strong>Quantity:</strong> {{ order.quantity }}</p>
+
+                <p class="price">
+                    Total: ₹{{ "%.2f"|format(order.total_price) }}
+                </p>
+
+            </div>
+
+            <div class="col-md-4 text-md-end">
+
+                <p><strong>Order Status</strong></p>
+
+                <span class="status {{ order.status|lower }}">
+                    {{ order.status }}
+                </span>
+
+                {% if session.get('role') == 'farmer' %}
+
+                    {% if order.status == 'Pending' or order.status == 'Confirmed' %}
+
+                    <form method="POST"
+                          action="{{ url_for('update_order_status', order_id=order.id) }}"
+                          class="mt-4">
+
+                        <label class="form-label">
+                            Update Order Status
+                        </label>
+
+                        <select name="status" class="form-select mb-2" required>
+
+                            {% if order.status == 'Pending' %}
+                                <option value="Confirmed">Confirm Order</option>
+                                <option value="Cancelled">Cancel Order</option>
+                            {% elif order.status == 'Confirmed' %}
+                                <option value="Completed">Mark as Completed</option>
+                                <option value="Cancelled">Cancel Order</option>
+                            {% endif %}
+
+                        </select>
+
+                        <button type="submit" class="btn btn-success w-100">
+                            Update Status
+                        </button>
+
+                    </form>
+
+                    {% endif %}
+
+                {% endif %}
+
+            </div>
+
+        </div>
+
+    </div>
+
+    {% else %}
+
+    <div class="alert alert-warning text-center">
+        <h5>No Orders Found</h5>
+        <p class="mb-0">Your orders will appear here.</p>
+    </div>
+
+    {% endfor %}
+
+</div>
+
+<footer class="text-center mt-5 py-4 text-muted">
+    © 2026 FreshRoute | Connecting Farmers and Buyers
+</footer>
+
+</body>
+</html>
